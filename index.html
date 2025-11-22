@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>山西大学餐厅评分计算系统</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <!-- 深色主题基础样式 -->
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            background: linear-gradient(135deg, #1e1e1e, #2d2d2d);
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        h2 {
+            color: #ffffff;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            font-size: 1.8rem;
+            border-bottom: 2px solid #4a4a4a;
+            padding-bottom: 10px;
+        }
+        
+        .section {
+            background-color: #1e1e1e;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1a56db',
+                        secondary: '#6b7280',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                        light: '#f3f4f6',
+                        dark: '#111827'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    },
+                    boxShadow: {
+                        card: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .transition-all {
+                transition-property: all;
+                transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+                transition-duration: 150ms;
+            }
+            .card {
+                @apply bg-white rounded-lg shadow-card p-6 transition-all hover:shadow-card-hover;
+            }
+            .btn {
+                @apply px-4 py-2 rounded-md font-medium transition-all focus:outline-none focus:ring-2 focus:ring-offset-2;
+            }
+            .btn-primary {
+                @apply bg-primary text-white hover:bg-primary/90 focus:ring-primary/50;
+            }
+            .btn-secondary {
+                @apply bg-secondary text-white hover:bg-secondary/90 focus:ring-secondary/50;
+            }
+            .btn-success {
+                @apply bg-success text-white hover:bg-success/90 focus:ring-success/50;
+            }
+            .btn-warning {
+                @apply bg-warning text-white hover:bg-warning/90 focus:ring-warning/50;
+            }
+            .btn-danger {
+                @apply bg-danger text-white hover:bg-danger/90 focus:ring-danger/50;
+            }
+            .input-field {
+                @apply w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary/50 focus:border-primary;
+            }
+            .label {
+                @apply block text-sm font-medium text-gray-700 mb-1;
+            }
+            .badge {
+                @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+            }
+            .badge-danger {
+                @apply bg-danger/10 text-danger;
+            }
+            .badge-warning {
+                @apply bg-warning/10 text-warning;
+            }
+            .badge-success {
+                @apply bg-success/10 text-success;
+            }
+            .table-header {
+                @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+            }
+            .table-cell {
+                @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
+            }
+            .progress-bar {
+                @apply h-2 rounded-full bg-gray-200 overflow-hidden;
+            }
+            .progress-value {
+                @apply h-full rounded-full transition-all duration-300 ease-in-out;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- 修改餐厅对比图表相关代码，将comparisonChart改为自适应的canvas元素 -->
+        <div class="section">
+            <h2>餐厅对比分析</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="text-sm font-medium text-gray-500">餐厅检查覆盖充分度</h3>
+                    <div class="mt-2 flex items-end">
+                        <span id="coverageRate" class="text-2xl font-bold text-gray-900">0.00</span>
+                        <span class="ml-1 text-gray-500">次/档口</span>
+                    </div>
+                    <div class="mt-2">
+                        <div class="flex justify-between text-xs text-gray-500">
+                            <span>0</span>
+                            <span>目标: <span id="coverageTargetDisplay">1.0</span></span>
+                        </div>
+                        <div class="progress-bar mt-1">
+                            <div id="coverageProgress" class="progress-value bg-primary" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="text-sm font-medium text-gray-500">餐厅问题严重度</h3>
+                    <div class="mt-2 flex items-end">
+                        <span id="issueSeverity" class="text-2xl font-bold text-gray-900">0.00</span>
+                        <span class="ml-1 text-gray-500">分/档口</span>
+                    </div>
+                    <div class="mt-2">
+                        <div class="flex justify-between text-xs text-gray-500">
+                            <span>0</span>
+                            <span>5</span>
+                        </div>
+                        <div class="progress-bar mt-1">
+                            <div id="severityProgress" class="progress-value bg-warning" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="text-sm font-medium text-gray-500">综合评分</h3>
+                    <div class="mt-2 flex items-end">
+                        <span id="compositeScore" class="text-2xl font-bold text-gray-900">0.00</span>
+                        <span class="ml-1 text-gray-500">分</span>
+                    </div>
+                    <div class="mt-2">
+                        <div class="flex justify-between text-xs text-gray-500">
+                            <span>0 (优)</span>
+                            <span>5 (差)</span>
+                        </div>
+                        <div class="progress-bar mt-1">
+                            <div id="scoreProgress" class="progress-value bg-success" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 text-sm text-gray-500">
+                <p>计算公式说明：</p>
+                <ul class="list-disc pl-5 mt-1">
+                    <li>餐厅检查覆盖充分度 = 检查次数 ÷ 档口数</li>
+                    <li>餐厅问题严重度 = (一般问题×<span id="weightGeneralDisplay">1</span> + 较重问题×<span id="weightSeriousDisplay">3</span> + 严重问题×<span id="weightCriticalDisplay">5</span>) ÷ 档口数</li>
+                    <li>综合评分 = (问题严重度 × 0.7) + (1 - 覆盖充分度 ÷ 目标值) × 0.3</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 结果输出区 -->
+        <section class="card mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                    <i class="fa fa-trophy text-primary mr-2"></i> 餐厅排名与优先级
+                </h2>
+                <div class="flex items-center">
+                    <span class="text-sm text-gray-500 mr-2">排序方式:</span>
+                    <select id="sortBy" class="text-sm border-gray-300 rounded-md focus:ring-primary focus:border-primary">
+                        <option value="scoreAsc">综合评分 (低→高)</option>
+                        <option value="scoreDesc">综合评分 (高→低)</option>
+                        <option value="severityAsc">问题严重度 (低→高)</option>
+                        <option value="severityDesc">问题严重度 (高→低)</option>
+                        <option value="coverageAsc">覆盖充分度 (低→高)</option>
+                        <option value="coverageDesc">覆盖充分度 (高→低)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="table-header">排名</th>
+                            <th scope="col" class="table-header">餐厅名称</th>
+                            <th scope="col" class="table-header">档口数</th>
+                            <th scope="col" class="table-header">检查次数</th>
+                            <th scope="col" class="table-header">问题总数</th>
+                            <th scope="col" class="table-header">覆盖充分度</th>
+                            <th scope="col" class="table-header">问题严重度</th>
+                            <th scope="col" class="table-header">综合评分</th>
+                            <th scope="col" class="table-header">整改优先级</th>
+                            <th scope="col" class="table-header">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="restaurantTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- 餐厅数据将通过JavaScript动态添加 -->
+                        <tr>
+                            <td colspan="10" class="table-cell text-center text-gray-500">暂无数据，请添加餐厅</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 可视化区 -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- 综合评分柱状图 -->
+            <div class="card">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fa fa-bar-chart text-primary mr-2"></i> 餐厅综合评分柱状图
+                </h2>
+                <div class="h-80">
+                    <canvas id="scoreBarChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 问题严重度 vs 覆盖充分度散点图 -->
+            <div class="card">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fa fa-dot-circle-o text-primary mr-2"></i> 问题严重度 vs 覆盖充分度
+                </h2>
+                <div class="h-80">
+                    <canvas id="scatterChart"></canvas>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 底部信息 -->
+    <footer class="bg-white border-t border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex justify-between items-center">
+                <p class="text-sm text-gray-500">© 2025 餐厅检查评分测算系统</p>
+                <div class="flex items-center space-x-4">
+                    <button id="helpBtn" class="text-sm text-gray-500 hover:text-primary">
+                        <i class="fa fa-question-circle mr-1"></i> 帮助
+                    </button>
+                    <button id="aboutBtn" class="text-sm text-gray-500 hover:text-primary">
+                        <i class="fa fa-info-circle mr-1"></i> 关于
+                    </button>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 帮助模态框 -->
+    <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-900">使用帮助</h3>
+                    <button id="closeHelpBtn" class="text-gray-400 hover:text-gray-500">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div class="prose">
+                    <h4>1. 基础设置</h4>
+                    <p>设置检查覆盖目标值（默认1次/档口）和问题权重（一般、较重、严重问题的权重值）。</p>
+                    
+                    <h4>2. 数据输入</h4>
+                    <p>输入餐厅名称、档口数、检查次数以及各类问题数量（一般、较重、严重）。</p>
+                    
+                    <h4>3. 计算评分</h4>
+                    <p>点击"计算评分"按钮，系统将自动计算餐厅检查覆盖充分度、问题严重度和综合评分。</p>
+                    
+                    <h4>4. 添加到列表</h4>
+                    <p>计算完成后，点击"添加到列表"按钮将当前餐厅数据添加到排名列表中。</p>
+                    
+                    <h4>5. 查看结果</h4>
+                    <p>在结果输出区查看餐厅排名和整改优先级，在可视化区查看评分柱状图和散点图。</p>
+                    
+                    <h4>6. 导出数据</h4>
+                    <p>点击顶部的"导出数据"按钮，可将所有餐厅数据导出为CSV格式。</p>
+                    
+                    <h4>计算公式说明</h4>
+                    <ul>
+                        <li>餐厅检查覆盖充分度 = 检查次数 ÷ 档口数</li>
+                        <li>餐厅问题严重度 = (一般问题×权重1 + 较重问题×权重2 + 严重问题×权重3) ÷ 档口数</li>
+                        <li>综合评分 = (问题严重度 × 0.7) + (1 - 覆盖充分度 ÷ 目标值) × 0.3</li>
+                    </ul>
+                    
+                    <h4>整改优先级说明</h4>
+                    <ul>
+                        <li>红色（高优先级）：综合评分 ≥ 2分</li>
+                        <li>黄色（中优先级）：综合评分 1-2分</li>
+                        <li>绿色（低优先级）：综合评分 &lt; 1分</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 关于模态框 -->
+    <div id="aboutModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-900">关于系统</h3>
+                    <button id="closeAboutBtn" class="text-gray-400 hover:text-gray-500">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div class="text-center">
+                    <i class="fa fa-cutlery text-primary text-4xl mb-4"></i>
+                    <h4 class="text-lg font-semibold text-gray-900">餐厅检查评分测算系统</h4>
+                    <p class="text-gray-500 mt-2">版本 1.0.0</p>
+                    <div class="mt-4 text-sm text-gray-500">
+                        <p>本系统旨在帮助餐饮行业管理者和食品安全检查员快速评估餐厅的检查表现，通过标准化的数据输入和精准的计算公式，自动生成餐厅的综合评分、排名和整改优先级，从而提高管理效率和决策质量。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // 全局变量
+        let restaurants = [];
+        let scoreBarChart = null;
+        let scatterChart = null;
+        
+        // DOM 元素
+        const targetCoverageInput = document.getElementById('targetCoverage');
+        const weightGeneralInput = document.getElementById('weightGeneral');
+        const weightSeriousInput = document.getElementById('weightSerious');
+        const weightCriticalInput = document.getElementById('weightCritical');
+        
+        const restaurantNameInput = document.getElementById('restaurantName');
+        const stallCountInput = document.getElementById('stallCount');
+        const inspectionCountInput = document.getElementById('inspectionCount');
+        const generalIssuesInput = document.getElementById('generalIssues');
+        const seriousIssuesInput = document.getElementById('seriousIssues');
+        const criticalIssuesInput = document.getElementById('criticalIssues');
+        
+        const calculateBtn = document.getElementById('calculateBtn');
+        const addRestaurantBtn = document.getElementById('addRestaurantBtn');
+        const resetAllBtn = document.getElementById('resetAllBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        
+        const coverageRateSpan = document.getElementById('coverageRate');
+        const issueSeveritySpan = document.getElementById('issueSeverity');
+        const compositeScoreSpan = document.getElementById('compositeScore');
+        
+        const coverageProgressDiv = document.getElementById('coverageProgress');
+        const severityProgressDiv = document.getElementById('severityProgress');
+        const scoreProgressDiv = document.getElementById('scoreProgress');
+        
+        const coverageTargetDisplaySpan = document.getElementById('coverageTargetDisplay');
+        const weightGeneralDisplaySpan = document.getElementById('weightGeneralDisplay');
+        const weightSeriousDisplaySpan = document.getElementById('weightSeriousDisplay');
+        const weightCriticalDisplaySpan = document.getElementById('weightCriticalDisplay');
+        
+        const restaurantTableBody = document.getElementById('restaurantTableBody');
+        const sortBySelect = document.getElementById('sortBy');
+        
+        const helpBtn = document.getElementById('helpBtn');
+        const aboutBtn = document.getElementById('aboutBtn');
+        const helpModal = document.getElementById('helpModal');
+        const aboutModal = document.getElementById('aboutModal');
+        const closeHelpBtn = document.getElementById('closeHelpBtn');
+        const closeAboutBtn = document.getElementById('closeAboutBtn');
+        
+        // 初始化
+        function init() {
+            // 更新权重显示
+            updateWeightDisplays();
+            
+            // 绑定事件
+            targetCoverageInput.addEventListener('input', updateCoverageTargetDisplay);
+            weightGeneralInput.addEventListener('input', updateWeightDisplays);
+            weightSeriousInput.addEventListener('input', updateWeightDisplays);
+            weightCriticalInput.addEventListener('input', updateWeightDisplays);
+            
+            calculateBtn.addEventListener('click', calculateScores);
+            addRestaurantBtn.addEventListener('click', addRestaurant);
+            resetAllBtn.addEventListener('click', resetAll);
+            exportBtn.addEventListener('click', exportData);
+            
+            sortBySelect.addEventListener('change', sortRestaurants);
+            
+            helpBtn.addEventListener('click', () => helpModal.classList.remove('hidden'));
+            aboutBtn.addEventListener('click', () => aboutModal.classList.remove('hidden'));
+            closeHelpBtn.addEventListener('click', () => helpModal.classList.add('hidden'));
+            closeAboutBtn.addEventListener('click', () => aboutModal.classList.add('hidden'));
+            
+            // 初始化图表
+            initCharts();
+            
+            // 示例数据
+            addExampleData();
+        }
+        
+        // 更新覆盖目标显示
+        function updateCoverageTargetDisplay() {
+            coverageTargetDisplaySpan.textContent = parseFloat(targetCoverageInput.value).toFixed(1);
+        }
+        
+        // 更新权重显示
+        function updateWeightDisplays() {
+            weightGeneralDisplaySpan.textContent = weightGeneralInput.value;
+            weightSeriousDisplaySpan.textContent = weightSeriousInput.value;
+            weightCriticalDisplaySpan.textContent = weightCriticalInput.value;
+        }
+        
+        // 计算评分
+        function calculateScores() {
+            // 获取输入值
+            const stallCount = parseInt(stallCountInput.value) || 0;
+            const inspectionCount = parseInt(inspectionCountInput.value) || 0;
+            const generalIssues = parseInt(generalIssuesInput.value) || 0;
+            const seriousIssues = parseInt(seriousIssuesInput.value) || 0;
+            const criticalIssues = parseInt(criticalIssuesInput.value) || 0;
+            
+            // 获取权重
+            const weightGeneral = parseInt(weightGeneralInput.value) || 1;
+            const weightSerious = parseInt(weightSeriousInput.value) || 3;
+            const weightCritical = parseInt(weightCriticalInput.value) || 5;
+            
+            // 获取目标覆盖值
+            const targetCoverage = parseFloat(targetCoverageInput.value) || 1;
+            
+            // 验证输入
+            if (stallCount <= 0) {
+                alert('请输入有效的档口数');
+                stallCountInput.focus();
+                return;
+            }
+            
+            // 计算覆盖充分度
+            const coverageRate = inspectionCount / stallCount;
+            
+            // 计算问题严重度
+            const totalIssueScore = (generalIssues * weightGeneral) + 
+                                   (seriousIssues * weightSerious) + 
+                                   (criticalIssues * weightCritical);
+            const issueSeverity = totalIssueScore / stallCount;
+            
+            // 计算综合评分
+            const coverageFactor = 1 - (coverageRate / targetCoverage);
+            const compositeScore = (issueSeverity * 0.7) + (coverageFactor * 0.3);
+            
+            // 更新显示
+            coverageRateSpan.textContent = coverageRate.toFixed(2);
+            issueSeveritySpan.textContent = issueSeverity.toFixed(2);
+            compositeScoreSpan.textContent = compositeScore.toFixed(2);
+            
+            // 更新进度条
+            const coveragePercentage = Math.min(100, (coverageRate / targetCoverage) * 100);
+            coverageProgressDiv.style.width = `${coveragePercentage}%`;
+            
+            const severityPercentage = Math.min(100, (issueSeverity / 5) * 100);
+            severityProgressDiv.style.width = `${severityPercentage}%`;
+            
+            const scorePercentage = Math.min(100, (compositeScore / 5) * 100);
+            scoreProgressDiv.style.width = `${scorePercentage}%`;
+            
+            // 更新进度条颜色
+            updateProgressColors(compositeScore);
+        }
+        
+        // 更新进度条颜色
+        function updateProgressColors(score) {
+            if (score >= 2) {
+                scoreProgressDiv.className = 'progress-value bg-danger';
+            } else if (score >= 1) {
+                scoreProgressDiv.className = 'progress-value bg-warning';
+            } else {
+                scoreProgressDiv.className = 'progress-value bg-success';
+            }
+        }
+        
+        // 添加餐厅
+        function addRestaurant() {
+            // 获取输入值
+            const name = restaurantNameInput.value.trim();
+            const stallCount = parseInt(stallCountInput.value) || 0;
+            const inspectionCount = parseInt(inspectionCountInput.value) || 0;
+            const generalIssues = parseInt(generalIssuesInput.value) || 0;
+            const seriousIssues = parseInt(seriousIssuesInput.value) || 0;
+            const criticalIssues = parseInt(criticalIssuesInput.value) || 0;
+            
+            // 获取权重
+            const weightGeneral = parseInt(weightGeneralInput.value) || 1;
+            const weightSerious = parseInt(weightSeriousInput.value) || 3;
+            const weightCritical = parseInt(weightCriticalInput.value) || 5;
+            
+            // 获取目标覆盖值
+            const targetCoverage = parseFloat(targetCoverageInput.value) || 1;
+            
+            // 验证输入
+            if (!name) {
+                alert('请输入餐厅名称');
+                restaurantNameInput.focus();
+                return;
+            }
+            
+            if (stallCount <= 0) {
+                alert('请输入有效的档口数');
+                stallCountInput.focus();
+                return;
+            }
+            
+            // 计算评分
+            const coverageRate = inspectionCount / stallCount;
+            const totalIssueScore = (generalIssues * weightGeneral) + 
+                                   (seriousIssues * weightSerious) + 
+                                   (criticalIssues * weightCritical);
+            const issueSeverity = totalIssueScore / stallCount;
+            const coverageFactor = 1 - (coverageRate / targetCoverage);
+            const compositeScore = (issueSeverity * 0.7) + (coverageFactor * 0.3);
+            
+            // 创建餐厅对象
+            const restaurant = {
+                id: Date.now(),
+                name,
+                stallCount,
+                inspectionCount,
+                generalIssues,
+                seriousIssues,
+                criticalIssues,
+                totalIssues: generalIssues + seriousIssues + criticalIssues,
+                coverageRate,
+                issueSeverity,
+                compositeScore,
+                priority: getPriority(compositeScore)
+            };
+            
+            // 添加到列表
+            restaurants.push(restaurant);
+            
+            // 排序餐厅
+            sortRestaurants();
+            
+            // 更新表格
+            updateRestaurantTable();
+            
+            // 更新图表
+            updateCharts();
+            
+            // 清空输入
+            clearInputFields();
+        }
+        
+        // 获取优先级
+        function getPriority(score) {
+            if (score >= 2) {
+                return { level: 'high', label: '高', color: 'danger', bgColor: 'bg-danger/10' };
+            } else if (score >= 1) {
+                return { level: 'medium', label: '中', color: 'warning', bgColor: 'bg-warning/10' };
+            } else {
+                return { level: 'low', label: '低', color: 'success', bgColor: 'bg-success/10' };
+            }
+        }
+        
+        // 排序餐厅
+        function sortRestaurants() {
+            const sortBy = sortBySelect.value;
+            
+            switch (sortBy) {
+                case 'scoreAsc':
+                    restaurants.sort((a, b) => a.compositeScore - b.compositeScore);
+                    break;
+                case 'scoreDesc':
+                    restaurants.sort((a, b) => b.compositeScore - a.compositeScore);
+                    break;
+                case 'severityAsc':
+                    restaurants.sort((a, b) => a.issueSeverity - b.issueSeverity);
+                    break;
+                case 'severityDesc':
+                    restaurants.sort((a, b) => b.issueSeverity - a.issueSeverity);
+                    break;
+                case 'coverageAsc':
+                    restaurants.sort((a, b) => a.coverageRate - b.coverageRate);
+                    break;
+                case 'coverageDesc':
+                    restaurants.sort((a, b) => b.coverageRate - a.coverageRate);
+                    break;
+            }
+            
+            // 更新表格
+            updateRestaurantTable();
+            
+            // 更新图表
+            updateCharts();
+        }
+        
+        // 更新餐厅表格
+        function updateRestaurantTable() {
+            // 清空表格
+            restaurantTableBody.innerHTML = '';
+            
+            // 如果没有数据，显示提示
+            if (restaurants.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="10" class="table-cell text-center text-gray-500">暂无数据，请添加餐厅</td>
+                `;
+                restaurantTableBody.appendChild(row);
+                return;
+            }
+            
+            // 添加餐厅数据
+            restaurants.forEach((restaurant, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="table-cell">${index + 1}</td>
+                    <td class="table-cell font-medium">${restaurant.name}</td>
+                    <td class="table-cell">${restaurant.stallCount}</td>
+                    <td class="table-cell">${restaurant.inspectionCount}</td>
+                    <td class="table-cell">${restaurant.totalIssues}</td>
+                    <td class="table-cell">${restaurant.coverageRate.toFixed(2)}</td>
+                    <td class="table-cell">${restaurant.issueSeverity.toFixed(2)}</td>
+                    <td class="table-cell font-medium">${restaurant.compositeScore.toFixed(2)}</td>
+                    <td class="table-cell">
+                        <span class="badge ${restaurant.priority.bgColor} text-${restaurant.priority.color}">
+                            ${restaurant.priority.label}优先级
+                        </span>
+                    </td>
+                    <td class="table-cell">
+                        <button class="text-red-500 hover:text-red-700 delete-btn" data-id="${restaurant.id}">
+                            <i class="fa fa-trash"></i> 删除
+                        </button>
+                    </td>
+                `;
+                restaurantTableBody.appendChild(row);
+            });
+            
+            // 绑定删除按钮事件
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    deleteRestaurant(id);
+                });
+            });
+        }
+        
+        // 删除餐厅
+        function deleteRestaurant(id) {
+            if (confirm('确定要删除这家餐厅的数据吗？')) {
+                restaurants = restaurants.filter(restaurant => restaurant.id !== id);
+                updateRestaurantTable();
+                updateCharts();
+            }
+        }
+        
+        // 清空输入字段
+        function clearInputFields() {
+            restaurantNameInput.value = '';
+            stallCountInput.value = '';
+            inspectionCountInput.value = '';
+            generalIssuesInput.value = '';
+            seriousIssuesInput.value = '';
+            criticalIssuesInput.value = '';
+            
+            coverageRateSpan.textContent = '0.00';
+            issueSeveritySpan.textContent = '0.00';
+            compositeScoreSpan.textContent = '0.00';
+            
+            coverageProgressDiv.style.width = '0%';
+            severityProgressDiv.style.width = '0%';
+            scoreProgressDiv.style.width = '0%';
+            
+            scoreProgressDiv.className = 'progress-value bg-success';
+            
+            restaurantNameInput.focus();
+        }
+        
+        // 重置所有
+        function resetAll() {
+            if (confirm('确定要重置所有数据吗？这将删除所有餐厅信息。')) {
+                // 重置输入
+                clearInputFields();
+                
+                // 重置设置
+                targetCoverageInput.value = '1';
+                weightGeneralInput.value = '1';
+                weightSeriousInput.value = '3';
+                weightCriticalInput.value = '5';
+                
+                // 更新显示
+                updateCoverageTargetDisplay();
+                updateWeightDisplays();
+                
+                // 清空餐厅列表
+                restaurants = [];
+                
+                // 更新表格
+                updateRestaurantTable();
+                
+                // 更新图表
+                updateCharts();
+            }
+        }
+        
+        // 导出数据
+        function exportData() {
+            if (restaurants.length === 0) {
+                alert('没有数据可导出');
+                return;
+            }
+            
+            // 创建CSV内容
+            let csvContent = "餐厅名称,档口数,检查次数,一般问题数,较重问题数,严重问题数,问题总数,覆盖充分度,问题严重度,综合评分,整改优先级\n";
+            
+            restaurants.forEach(restaurant => {
+                csvContent += `${restaurant.name},${restaurant.stallCount},${restaurant.inspectionCount},${restaurant.generalIssues},${restaurant.seriousIssues},${restaurant.criticalIssues},${restaurant.totalIssues},${restaurant.coverageRate.toFixed(2)},${restaurant.issueSeverity.toFixed(2)},${restaurant.compositeScore.toFixed(2)},${restaurant.priority.label}优先级\n`;
+            });
+            
+            // 创建Blob对象
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            
+            // 创建下载链接
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `餐厅检查评分数据_${new Date().toISOString().slice(0, 10)}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // 初始化图表
+        function initCharts() {
+            // 图表深色主题配置
+            Chart.defaults.color = '#e5e7eb';
+            Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+            
+            // 综合评分柱状图
+            const scoreBarCtx = document.getElementById('scoreBarChart').getContext('2d');
+            scoreBarChart = new Chart(scoreBarCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '综合评分',
+                        data: [],
+                        backgroundColor: [],
+                        borderColor: [],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 5,
+                            title: {
+                                display: true,
+                                text: '综合评分',
+                                color: '#e5e7eb'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#9ca3af'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            },
+                            ticks: {
+                                color: '#9ca3af'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.8)',
+                            titleColor: '#e5e7eb',
+                            bodyColor: '#e5e7eb',
+                            callbacks: {
+                                label: function(context) {
+                                    return `综合评分: ${context.raw.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 问题严重度 vs 覆盖充分度散点图
+            const scatterCtx = document.getElementById('scatterChart').getContext('2d');
+            scatterChart = new Chart(scatterCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: '餐厅表现',
+                        data: [],
+                        backgroundColor: [],
+                        borderColor: [],
+                        borderWidth: 1,
+                        pointRadius: 8,
+                        pointHoverRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '覆盖充分度 (次/档口)',
+                                color: '#e5e7eb'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#9ca3af'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '问题严重度 (分/档口)',
+                                color: '#e5e7eb'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#9ca3af'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                color: '#e5e7eb'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.8)',
+                            titleColor: '#e5e7eb',
+                            bodyColor: '#e5e7eb',
+                            callbacks: {
+                                label: function(context) {
+                                    const restaurant = restaurants[context.dataIndex];
+                                    return [
+                                        `餐厅: ${restaurant.name}`,
+                                        `覆盖充分度: ${restaurant.coverageRate.toFixed(2)}`,
+                                        `问题严重度: ${restaurant.issueSeverity.toFixed(2)}`,
+                                        `综合评分: ${restaurant.compositeScore.toFixed(2)}`
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 更新图表
+        function updateCharts() {
+            // 更新柱状图
+            scoreBarChart.data.labels = restaurants.map(r => r.name);
+            scoreBarChart.data.datasets[0].data = restaurants.map(r => r.compositeScore);
+            
+            // 设置柱状图颜色
+            const barColors = restaurants.map(r => {
+                if (r.compositeScore >= 2) return '#ef4444'; // 红色
+                if (r.compositeScore >= 1) return '#f59e0b'; // 黄色
+                return '#10b981'; // 绿色
+            });
+            
+            scoreBarChart.data.datasets[0].backgroundColor = barColors;
+            scoreBarChart.data.datasets[0].borderColor = barColors;
+            
+            // 更新散点图
+            scatterChart.data.datasets[0].data = restaurants.map(r => ({
+                x: r.coverageRate,
+                y: r.issueSeverity
+            }));
+            
+            // 设置散点图颜色
+            const scatterColors = restaurants.map(r => {
+                if (r.compositeScore >= 2) return '#ef4444'; // 红色
+                if (r.compositeScore >= 1) return '#f59e0b'; // 黄色
+                return '#10b981'; // 绿色
+            });
+            
+            scatterChart.data.datasets[0].backgroundColor = scatterColors;
+            scatterChart.data.datasets[0].borderColor = scatterColors;
+            
+            // 更新图表
+            scoreBarChart.update();
+            scatterChart.update();
+        }
+        
+        // 添加示例数据
+        function addExampleData() {
+            const exampleRestaurants = [
+                {
+                    name: '幸福餐厅',
+                    stallCount: 5,
+                    inspectionCount: 6,
+                    generalIssues: 3,
+                    seriousIssues: 1,
+                    criticalIssues: 0
+                },
+                {
+                    name: '美味轩',
+                    stallCount: 3,
+                    inspectionCount: 3,
+                    generalIssues: 5,
+                    seriousIssues: 2,
+                    criticalIssues: 1
+                },
+                {
+                    name: '快乐厨房',
+                    stallCount: 4,
+                    inspectionCount: 8,
+                    generalIssues: 1,
+                    seriousIssues: 0,
+                    criticalIssues: 0
+                },
+                {
+                    name: '健康食府',
+                    stallCount: 6,
+                    inspectionCount: 4,
+                    generalIssues: 4,
+                    seriousIssues: 3,
+                    criticalIssues: 1
+                },
+                {
+                    name: '阳光餐厅',
+                    stallCount: 2,
+                    inspectionCount: 2,
+                    generalIssues: 0,
+                    seriousIssues: 0,
+                    criticalIssues: 0
+                }
+            ];
+            
+            // 获取权重
+            const weightGeneral = parseInt(weightGeneralInput.value) || 1;
+            const weightSerious = parseInt(weightSeriousInput.value) || 3;
+            const weightCritical = parseInt(weightCriticalInput.value) || 5;
+            
+            // 获取目标覆盖值
+            const targetCoverage = parseFloat(targetCoverageInput.value) || 1;
+            
+            // 添加示例餐厅
+            exampleRestaurants.forEach(example => {
+                const coverageRate = example.inspectionCount / example.stallCount;
+                const totalIssueScore = (example.generalIssues * weightGeneral) + 
+                                       (example.seriousIssues * weightSerious) + 
+                                       (example.criticalIssues * weightCritical);
+                const issueSeverity = totalIssueScore / example.stallCount;
+                const coverageFactor = 1 - (coverageRate / targetCoverage);
+                const compositeScore = (issueSeverity * 0.7) + (coverageFactor * 0.3);
+                
+                restaurants.push({
+                    id: Date.now() + Math.floor(Math.random() * 1000),
+                    name: example.name,
+                    stallCount: example.stallCount,
+                    inspectionCount: example.inspectionCount,
+                    generalIssues: example.generalIssues,
+                    seriousIssues: example.seriousIssues,
+                    criticalIssues: example.criticalIssues,
+                    totalIssues: example.generalIssues + example.seriousIssues + example.criticalIssues,
+                    coverageRate,
+                    issueSeverity,
+                    compositeScore,
+                    priority: getPriority(compositeScore)
+                });
+            });
+            
+            // 排序餐厅
+            sortRestaurants();
+            
+            // 更新表格
+            updateRestaurantTable();
+            
+            // 更新图表
+            updateCharts();
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
