@@ -3,69 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>山西大学餐厅评分计算系统</title>
+    <title>餐厅检查评分测算系统</title>
     <!-- Tailwind CSS v3 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
-    <!-- 深色主题基础样式 -->
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background-color: #121212;
-            color: #e0e0e0;
-            margin: 0;
-            padding: 0;
-            line-height: 1.6;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        header {
-            text-align: center;
-            padding: 30px 0;
-            background: linear-gradient(135deg, #1e1e1e, #2d2d2d);
-            margin-bottom: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        }
-        
-        h1 {
-            color: #ffffff;
-            margin: 0;
-            font-size: 2.5rem;
-            font-weight: 700;
-        }
-        
-        h2 {
-            color: #ffffff;
-            margin-top: 20px;
-            margin-bottom: 15px;
-            font-size: 1.8rem;
-            border-bottom: 2px solid #4a4a4a;
-            padding-bottom: 10px;
-        }
-        
-        .section {
-            background-color: #1e1e1e;
-            padding: 25px;
-            margin-bottom: 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease;
-        }
-        
-        .section:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        }
-    </style>
     <!-- Tailwind 配置 -->
     <script>
         tailwind.config = {
@@ -77,8 +21,7 @@
                         success: '#10b981',
                         warning: '#f59e0b',
                         danger: '#ef4444',
-                        light: '#f3f4f6',
-                        dark: '#111827'
+                        light: '#f3f4f6'
                     },
                     fontFamily: {
                         sans: ['Inter', 'system-ui', 'sans-serif']
@@ -151,15 +94,116 @@
             }
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
-<body>
-    <div class="container">
-        <!-- 修改餐厅对比图表相关代码，将comparisonChart改为自适应的canvas元素 -->
-        <div class="section">
-            <h2>餐厅对比分析</h2>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <i class="fa fa-cutlery text-primary text-2xl mr-3"></i>
+                    <h1 class="text-xl font-bold text-gray-900">餐厅检查评分测算系统</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="resetAllBtn" class="btn btn-secondary">
+                        <i class="fa fa-refresh mr-1"></i> 重置所有
+                    </button>
+                    <button id="exportBtn" class="btn btn-primary">
+                        <i class="fa fa-download mr-1"></i> 导出数据
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要内容区 -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 基础设置区 -->
+        <section class="card mb-8">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <i class="fa fa-cog text-primary mr-2"></i> 基础设置
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="targetCoverage" class="label">检查覆盖目标值</label>
+                    <div class="flex items-center">
+                        <input type="number" id="targetCoverage" value="1" min="0.1" step="0.1" class="input-field">
+                        <span class="ml-2 text-gray-500">次/档口</span>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-1">默认值为1次/档口，可根据实际情况调整</p>
+                </div>
+                <div>
+                    <label class="label">问题权重设置</label>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="text-xs text-gray-500">一般问题</label>
+                            <div class="flex items-center">
+                                <input type="number" id="weightGeneral" value="1" min="1" max="10" class="input-field">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">较重问题</label>
+                            <div class="flex items-center">
+                                <input type="number" id="weightSerious" value="3" min="1" max="10" class="input-field">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">严重问题</label>
+                            <div class="flex items-center">
+                                <input type="number" id="weightCritical" value="5" min="1" max="10" class="input-field">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 数据输入区 -->
+        <section class="card mb-8">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <i class="fa fa-pencil-square-o text-primary mr-2"></i> 数据输入
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                    <label for="restaurantName" class="label">餐厅名称</label>
+                    <input type="text" id="restaurantName" placeholder="请输入餐厅名称" class="input-field">
+                </div>
+                <div>
+                    <label for="stallCount" class="label">档口数</label>
+                    <input type="number" id="stallCount" min="1" placeholder="请输入档口数量" class="input-field">
+                </div>
+                <div>
+                    <label for="inspectionCount" class="label">检查次数</label>
+                    <input type="number" id="inspectionCount" min="0" placeholder="请输入检查次数" class="input-field">
+                </div>
+                <div>
+                    <label for="generalIssues" class="label">一般问题数</label>
+                    <input type="number" id="generalIssues" min="0" placeholder="请输入一般问题数量" class="input-field">
+                </div>
+                <div>
+                    <label for="seriousIssues" class="label">较重问题数</label>
+                    <input type="number" id="seriousIssues" min="0" placeholder="请输入较重问题数量" class="input-field">
+                </div>
+                <div>
+                    <label for="criticalIssues" class="label">严重问题数</label>
+                    <input type="number" id="criticalIssues" min="0" placeholder="请输入严重问题数量" class="input-field">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button id="calculateBtn" class="btn btn-primary">
+                    <i class="fa fa-calculator mr-1"></i> 计算评分
+                </button>
+                <button id="addRestaurantBtn" class="btn btn-success ml-3">
+                    <i class="fa fa-plus mr-1"></i> 添加到列表
+                </button>
+            </div>
+        </section>
+
+        <!-- 自动计算区 -->
+        <section class="card mb-8">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <i class="fa fa-cogs text-primary mr-2"></i> 自动计算结果
+            </h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-gray-50 p-4 rounded-lg">
                     <h3 class="text-sm font-medium text-gray-500">餐厅检查覆盖充分度</h3>
@@ -786,10 +830,6 @@
         
         // 初始化图表
         function initCharts() {
-            // 图表深色主题配置
-            Chart.defaults.color = '#e5e7eb';
-            Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-            
             // 综合评分柱状图
             const scoreBarCtx = document.getElementById('scoreBarChart').getContext('2d');
             scoreBarChart = new Chart(scoreBarCtx, {
@@ -814,22 +854,7 @@
                             max: 5,
                             title: {
                                 display: true,
-                                text: '综合评分',
-                                color: '#e5e7eb'
-                            },
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            },
-                            ticks: {
-                                color: '#9ca3af'
-                            }
-                        },
-                        y: {
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.05)'
-                            },
-                            ticks: {
-                                color: '#9ca3af'
+                                text: '综合评分'
                             }
                         }
                     },
@@ -838,9 +863,6 @@
                             display: false
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(17, 24, 39, 0.8)',
-                            titleColor: '#e5e7eb',
-                            bodyColor: '#e5e7eb',
                             callbacks: {
                                 label: function(context) {
                                     return `综合评分: ${context.raw.toFixed(2)}`;
@@ -873,41 +895,18 @@
                         x: {
                             title: {
                                 display: true,
-                                text: '覆盖充分度 (次/档口)',
-                                color: '#e5e7eb'
-                            },
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            },
-                            ticks: {
-                                color: '#9ca3af'
+                                text: '覆盖充分度 (次/档口)'
                             }
                         },
                         y: {
                             title: {
                                 display: true,
-                                text: '问题严重度 (分/档口)',
-                                color: '#e5e7eb'
-                            },
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            },
-                            ticks: {
-                                color: '#9ca3af'
+                                text: '问题严重度 (分/档口)'
                             }
                         }
                     },
                     plugins: {
-                        legend: {
-                            display: true,
-                            labels: {
-                                color: '#e5e7eb'
-                            }
-                        },
                         tooltip: {
-                            backgroundColor: 'rgba(17, 24, 39, 0.8)',
-                            titleColor: '#e5e7eb',
-                            bodyColor: '#e5e7eb',
                             callbacks: {
                                 label: function(context) {
                                     const restaurant = restaurants[context.dataIndex];
